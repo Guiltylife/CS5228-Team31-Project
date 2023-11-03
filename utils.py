@@ -30,11 +30,15 @@ class LikelihoodEncoder:
         # Map the mode values to the dataframe
         df[f'P({self.target_feature}|{self.cat_feature})'] = df[self.cat_feature].map(self.mode_values)
 
+        # Handle unseen categories by filling NaN with the most common target feature value (or another statistic)
+        if self.prior_prob is not None:
+            most_common_target_value = max(self.prior_prob, key=self.prior_prob.get)
+            df[f'P({self.target_feature}|{self.cat_feature})'].fillna(most_common_target_value, inplace=True)
+
         # Add Gaussian noise
         df[f'P({self.target_feature}|{self.cat_feature})'] += np.random.normal(0, self.noise_std, size=df.shape[0])
 
         return df
-
 
 class GroupedStatsEncoder:
     def __init__(self, target_column, group_columns):
@@ -67,7 +71,14 @@ class GroupedStatsEncoder:
 
     def transform(self, df):
         for group_column in self.group_columns:
+            # Merge with the statistics dataframe
             df = df.merge(self.stats_data[group_column], on=group_column, how='left')
+
+            # Fill NaN values with the median of the column
+            for stat in ['std', 'median']:
+                stat_col_name = f"{group_column}_{stat}_{self.target_column}"
+                if stat_col_name in df.columns:
+                    df[stat_col_name].fillna(df[stat_col_name].median(), inplace=True)
         return df
 
 def get_economic_indicator_feature(dataset, index_name, value):
