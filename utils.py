@@ -28,10 +28,10 @@ class LikelihoodEncoder:
 
     def transform(self, df):
         # Map the mode values to the dataframe
-        df[f'likelihood_{self.cat_feature}'] = df[self.cat_feature].map(self.mode_values)
+        df[f'P({self.target_feature}|{self.cat_feature})'] = df[self.cat_feature].map(self.mode_values)
 
         # Add Gaussian noise
-        df[f'likelihood_{self.cat_feature}'] += np.random.normal(0, self.noise_std, size=df.shape[0])
+        df[f'P({self.target_feature}|{self.cat_feature})'] += np.random.normal(0, self.noise_std, size=df.shape[0])
 
         return df
 
@@ -46,7 +46,6 @@ class GroupedStatsEncoder:
         grouped = df[[self.target_column, group_column]].groupby(group_column)
 
         stats_functions = {
-            'size': 'size',
             'std': 'std',
             'median': 'median',
         }
