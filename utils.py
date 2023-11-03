@@ -71,7 +71,7 @@ class GroupedStatsEncoder:
             df = df.merge(self.stats_data[group_column], on=group_column, how='left')
         return df
 
-def get_economic_indicator_feature(dataset, value):
+def get_economic_indicator_feature(dataset, index_name, value):
     # Convert the "date" column to datetime format
     dataset['date'] = pd.to_datetime(dataset['date'])
 
@@ -81,8 +81,8 @@ def get_economic_indicator_feature(dataset, value):
 
     # Group by year and month, then calculate mean and standard deviation w.r.t. the value
     monthly_stats = dataset.groupby(['year', 'month'])[value].agg(
-        index_price='mean',
-        index_volatility='std'
+        index_price = 'mean',
+        index_volatility = 'std'
     ).reset_index()
 
     return monthly_stats
