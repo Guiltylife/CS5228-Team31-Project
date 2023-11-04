@@ -62,7 +62,7 @@ def create_feature_crosses(df, feature_pairs):
     """
     # Now create the new features
     for i, (feature_a, feature_b) in enumerate(feature_pairs, 1):
-        new_feature_name = f'cross_{feature_a}_{feature_b}'
+        new_feature_name = f'magic_{i}'
         df[new_feature_name] = df[feature_a] * df[feature_b]
 
     return df
