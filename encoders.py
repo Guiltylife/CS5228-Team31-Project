@@ -121,13 +121,13 @@ def city_encoder(train_data, test_data):
     test_data['TownCode'] = le_town.transform(test_data['town'])
 
     # Create a unique identifier by combining the codes
-    train_data['city_encoder'] = (train_data['PlanningAreaCode'].astype(str).str.zfill(5) +
-                                  train_data['SubzoneCode'].astype(str).str.zfill(3) +
-                                  train_data['TownCode'].astype(str).str.zfill(2)).astype(int)
+    train_data['city_encoder'] = (train_data['PlanningAreaCode'].astype(str).str.zfill(4) +
+                                  train_data['SubzoneCode'].astype(str).str.zfill(2) +
+                                  train_data['TownCode'].astype(str).str.zfill(0)).astype(int)
 
-    test_data['city_encoder'] = (test_data['PlanningAreaCode'].astype(str).str.zfill(5) +
-                                 test_data['SubzoneCode'].astype(str).str.zfill(3) +
-                                 test_data['TownCode'].astype(str).str.zfill(2)).astype(int)
+    test_data['city_encoder'] = (test_data['PlanningAreaCode'].astype(str).str.zfill(4) +
+                                 test_data['SubzoneCode'].astype(str).str.zfill(2) +
+                                 test_data['TownCode'].astype(str).str.zfill(0)).astype(int)
 
     # Drop the intermediate columns used for encoding
     train_data.drop(['PlanningAreaCode', 'SubzoneCode', 'TownCode'], axis=1, inplace=True)
