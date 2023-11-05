@@ -99,35 +99,44 @@ def get_economic_indicator_feature(dataset, index_name, value):
     return monthly_stats
 
 
-def city_encoder(train_data, test_data):
+def encode_hierarchical(train_data, test_data, urban_planning):
+    planning_area_col, subzone_col, town_col = urban_planning
+
     # Initialize the label encoders for each categorical feature
     le_planning_area = LabelEncoder()
     le_subzone = LabelEncoder()
     le_town = LabelEncoder()
 
     # Fit the label encoders to the categorical features of the training data
-    le_planning_area.fit(train_data['planning_area'])
-    le_subzone.fit(train_data['subzone'])
-    le_town.fit(train_data['town'])
+    le_planning_area.fit(train_data[planning_area_col])
+    le_subzone.fit(train_data[subzone_col])
+    le_town.fit(train_data[town_col])
 
-    # Transform both training and testing data
-    train_data['PlanningAreaCode'] = le_planning_area.transform(train_data['planning_area'])
-    test_data['PlanningAreaCode'] = le_planning_area.transform(test_data['planning_area'])
+    # Transform both training and testing data, adding 1 to start encoding from 1
+    train_data['PlanningAreaCode'] = (le_planning_area.transform(train_data[planning_area_col]) + 1) * 10**5
+    test_data['PlanningAreaCode'] = (le_planning_area.transform(test_data[planning_area_col]) + 1) * 10**5
 
-    train_data['SubzoneCode'] = le_subzone.transform(train_data['subzone'])
-    test_data['SubzoneCode'] = le_subzone.transform(test_data['subzone'])
+    # For subzone, we reset the encoder for each planning area
+    for area in le_planning_area.classes_:
+        area_mask = train_data[planning_area_col] == area
+        le_subzone.fit(train_data.loc[area_mask, subzone_col])
+        train_data.loc[area_mask, 'SubzoneCode'] = (le_subzone.transform(train_data.loc[area_mask, subzone_col]) + 1) * 10**3
 
-    train_data['TownCode'] = le_town.transform(train_data['town'])
-    test_data['TownCode'] = le_town.transform(test_data['town'])
+        area_mask_test = test_data[planning_area_col] == area
+        test_data.loc[area_mask_test, 'SubzoneCode'] = (le_subzone.transform(test_data.loc[area_mask_test, subzone_col]) + 1) * 10**3
+
+    # For town, we reset the encoder for each subzone
+    for subzone in train_data[subzone_col].unique():
+        subzone_mask = train_data[subzone_col] == subzone
+        le_town.fit(train_data.loc[subzone_mask, town_col])
+        train_data.loc[subzone_mask, 'TownCode'] = le_town.transform(train_data.loc[subzone_mask, town_col]) + 1
+
+        subzone_mask_test = test_data[subzone_col] == subzone
+        test_data.loc[subzone_mask_test, 'TownCode'] = le_town.transform(test_data.loc[subzone_mask_test, town_col]) + 1
 
     # Create a unique identifier by combining the codes
-    train_data['city_encoder'] = (train_data['PlanningAreaCode'].astype(str).str.zfill(4) +
-                                  train_data['SubzoneCode'].astype(str).str.zfill(2) +
-                                  train_data['TownCode'].astype(str).str.zfill(0)).astype(int)
-
-    test_data['city_encoder'] = (test_data['PlanningAreaCode'].astype(str).str.zfill(4) +
-                                 test_data['SubzoneCode'].astype(str).str.zfill(2) +
-                                 test_data['TownCode'].astype(str).str.zfill(0)).astype(int)
+    train_data['city_encoder'] = train_data['PlanningAreaCode'] + train_data['SubzoneCode'] + train_data['TownCode']
+    test_data['city_encoder'] = test_data['PlanningAreaCode'] + test_data['SubzoneCode'] + test_data['TownCode']
 
     # Drop the intermediate columns used for encoding
     train_data.drop(['PlanningAreaCode', 'SubzoneCode', 'TownCode'], axis=1, inplace=True)
