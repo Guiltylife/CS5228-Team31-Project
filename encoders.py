@@ -41,6 +41,7 @@ class LikelihoodEncoder:
 
         return df
 
+
 class GroupedStatsEncoder:
     def __init__(self, target_column, group_columns):
         self.target_column = target_column
@@ -81,6 +82,7 @@ class GroupedStatsEncoder:
                 if stat_col_name in df.columns:
                     df[stat_col_name].fillna(df[stat_col_name].median(), inplace=True)
         return df
+
 
 def get_economic_indicator_feature(dataset, index_name, value):
     # Convert the "date" column to datetime format
